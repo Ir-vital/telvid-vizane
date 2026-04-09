@@ -1,0 +1,33 @@
+# Dépendances principales pour TelVid-Vizane
+# Interface utilisateur
+customtkinter>=5.2.0
+Pillow>=10.0.0
+
+# Téléchargement de vidéos
+yt-dlp>=2023.7.6
+
+# Conversion vidéo/audio
+moviepy>=1.0.3
+
+# Requêtes HTTP pour auto-update
+requests>=2.31.0
+
+# Sécurité et cryptographie
+cryptography>=41.0.0
+
+# Packaging et build
+pyinstaller>=5.13.0
+
+# Développement et tests (optionnel)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.7.0
+pylint>=2.17.0
+mypy>=1.5.0
+bandit>=1.7.0
+safety>=2.3.0
+pre-commit>=3.3.0
+
+# Documentation (optionnel)
+sphinx>=7.1.0
+sphinx-rtd-theme>=1.3.0

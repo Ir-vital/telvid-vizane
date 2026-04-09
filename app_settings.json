@@ -1,0 +1,12 @@
+{
+  "theme": "dark",
+  "language": "fr",
+  "auto_update": true,
+  "download_path": "C:\\Users\\Vizane/Downloads",
+  "max_downloads": 5,
+  "quality_preference": "hd",
+  "notifications": true,
+  "history_enabled": true,
+  "auto_retry": true,
+  "window_geometry": "1366x745+-7+0"
+}

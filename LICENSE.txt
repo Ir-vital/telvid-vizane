@@ -1,0 +1,125 @@
+CONTRAT DE LICENCE UTILISATEUR FINAL (CLUF)
+TelVid-Vizane — Logiciel de téléchargement de vidéos
+Version 1.0.0
+Copyright (c) 2026 Vital Zagabe Néophite — VIZANE
+Tous droits réservés.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+VEUILLEZ LIRE ATTENTIVEMENT CE CONTRAT AVANT D'UTILISER CE LOGICIEL.
+EN INSTALLANT, COPIANT OU UTILISANT CE LOGICIEL, VOUS ACCEPTEZ D'ÊTRE LIÉ
+PAR LES TERMES DE CE CONTRAT. SI VOUS N'ACCEPTEZ PAS CES TERMES, N'INSTALLEZ
+PAS ET N'UTILISEZ PAS CE LOGICIEL.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+1. DÉFINITIONS
+──────────────
+"Logiciel" désigne l'application TelVid-Vizane, incluant tous ses composants,
+fichiers, données, mises à jour et documentation associée.
+"Utilisateur" désigne toute personne physique ou morale qui installe ou utilise
+le Logiciel.
+"Licence Gratuite" désigne l'accès aux fonctionnalités de base sans frais.
+"Licence Premium" désigne l'accès aux fonctionnalités avancées moyennant
+paiement d'un abonnement.
+
+2. CONCESSION DE LICENCE
+─────────────────────────
+VIZANE vous accorde une licence personnelle, non exclusive, non transférable
+et révocable pour utiliser ce Logiciel conformément aux termes du présent
+contrat.
+
+2.1 Licence Gratuite
+Vous êtes autorisé à :
+  - Installer et utiliser le Logiciel sur un seul appareil personnel.
+  - Télécharger des vidéos en qualité SD (jusqu'à 480p).
+  - Extraire l'audio en MP3 (128 kbps).
+  - Effectuer un téléchargement à la fois.
+
+2.2 Licence Premium
+En souscrivant à un abonnement Premium, vous bénéficiez en plus de :
+  - Téléchargements simultanés illimités.
+  - Qualité vidéo HD (720p et plus, jusqu'à 1080p+).
+  - Audio MP3 haute qualité (320 kbps).
+  - Support client prioritaire.
+  - Accès aux futures fonctionnalités Premium.
+
+3. RESTRICTIONS
+───────────────
+Il vous est expressément interdit de :
+  a) Copier, modifier, adapter ou créer des œuvres dérivées du Logiciel.
+  b) Décompiler, désassembler ou tenter d'extraire le code source du Logiciel.
+  c) Vendre, louer, prêter, sous-licencier ou distribuer le Logiciel à des tiers.
+  d) Supprimer ou modifier les mentions de droits d'auteur ou de propriété.
+  e) Utiliser le Logiciel à des fins illégales ou contraires aux lois en vigueur.
+  f) Partager, transférer ou céder votre clé de licence Premium à un tiers.
+  g) Contourner les mécanismes de protection ou de vérification de licence.
+
+4. PROPRIÉTÉ INTELLECTUELLE
+────────────────────────────
+Le Logiciel, y compris son code source, son interface, ses icônes, sa
+documentation et tous ses composants, est la propriété exclusive de
+Vital Zagabe Néophite (VIZANE) et est protégé par les lois sur le droit
+d'auteur et la propriété intellectuelle applicables.
+
+5. RESPONSABILITÉ DE L'UTILISATEUR
+────────────────────────────────────
+L'Utilisateur est seul responsable de l'usage qu'il fait du Logiciel.
+Il lui appartient de s'assurer que le téléchargement de contenus est
+autorisé par les détenteurs des droits concernés et conforme aux lois
+de son pays. VIZANE décline toute responsabilité en cas d'utilisation
+du Logiciel pour télécharger des contenus protégés par le droit d'auteur
+sans autorisation.
+
+6. LIMITATION DE RESPONSABILITÉ
+─────────────────────────────────
+DANS LES LIMITES AUTORISÉES PAR LA LOI APPLICABLE, VIZANE NE POURRA EN
+AUCUN CAS ÊTRE TENU RESPONSABLE DE DOMMAGES INDIRECTS, ACCESSOIRES,
+SPÉCIAUX OU CONSÉCUTIFS RÉSULTANT DE L'UTILISATION OU DE L'IMPOSSIBILITÉ
+D'UTILISER LE LOGICIEL, MÊME SI VIZANE A ÉTÉ INFORMÉ DE LA POSSIBILITÉ
+DE TELS DOMMAGES.
+
+7. ABONNEMENT ET PAIEMENT
+──────────────────────────
+7.1 Les tarifs des abonnements Premium sont affichés dans l'application
+    et peuvent être modifiés avec un préavis raisonnable.
+7.2 Les paiements sont effectués via les méthodes disponibles au Burundi
+    (Lumicash, Ecocash, virement bancaire, carte bancaire).
+7.3 Les abonnements mensuels et annuels sont renouvelables. La licence
+    à vie est un paiement unique sans renouvellement.
+7.4 Aucun remboursement ne sera accordé après activation de la clé de
+    licence, sauf en cas de défaut avéré du Logiciel.
+
+8. MISES À JOUR
+────────────────
+VIZANE peut, à sa discrétion, publier des mises à jour du Logiciel.
+Ces mises à jour peuvent modifier les fonctionnalités disponibles.
+L'utilisation des mises à jour est soumise aux termes du présent contrat.
+
+9. RÉSILIATION
+───────────────
+Ce contrat est effectif jusqu'à sa résiliation. Il prend fin automatiquement
+si vous ne respectez pas l'un de ses termes. En cas de résiliation, vous
+devez cesser toute utilisation du Logiciel et supprimer toutes les copies
+en votre possession.
+
+10. LOI APPLICABLE
+───────────────────
+Ce contrat est régi par les lois de la République du Burundi. Tout litige
+relatif à ce contrat sera soumis à la juridiction compétente de Bujumbura,
+Burundi.
+
+11. CONTACT
+────────────
+Pour toute question relative à ce contrat ou au Logiciel :
+
+  Développeur  : Vital Zagabe Néophite
+  Marque       : VIZANE
+  Email        : vitalzagabe156@gmail.com
+  WhatsApp     : +243 827 788 173
+  Site web     : https://vital-portfolio-fx02.onrender.com/
+
+═══════════════════════════════════════════════════════════════════════════════
+En utilisant TelVid-Vizane, vous confirmez avoir lu, compris et accepté
+l'intégralité des termes de ce Contrat de Licence Utilisateur Final.
+═══════════════════════════════════════════════════════════════════════════════
