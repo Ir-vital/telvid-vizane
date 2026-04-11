@@ -67,7 +67,8 @@ def resource_path(relative_path):
 # Système de paramètres simple mais fonctionnel
 class SettingsManager:
     def __init__(self):
-        self.settings_file = "app_settings.json"
+        from src.license_manager import get_app_data_dir
+        self.settings_file = os.path.join(get_app_data_dir(), "app_settings.json")
         self.default_settings = {
             "theme": "dark",
             "language": "fr",
@@ -78,7 +79,7 @@ class SettingsManager:
             "notifications": True,
             "history_enabled": True,
             "auto_retry": True,
-            "window_geometry": "900x750"
+            "window_geometry": "1100x780"
         }
         self.settings = self.load_settings()
     
@@ -114,7 +115,8 @@ class SettingsManager:
 # Historique des téléchargements simple mais fonctionnel
 class DownloadHistory:
     def __init__(self):
-        self.history_file = "download_history.json"
+        from src.license_manager import get_app_data_dir
+        self.history_file = os.path.join(get_app_data_dir(), "download_history.json")
         self.history = self.load_history()
     
     def load_history(self):
@@ -282,8 +284,12 @@ class SettingsWindow(ctk.CTkToplevel):
         self.settings_manager.set("quality_preference", self.quality_var.get())
         self.settings_manager.set("auto_retry", self.auto_retry_var.get())
         self.settings_manager.set("history_enabled", self.history_enabled_var.get())
-        
-        messagebox.showinfo("Paramètres", "Paramètres sauvegardés avec succès!")
+
+        # Appliquer le thème immédiatement
+        new_theme = self.theme_var.get()
+        ctk.set_appearance_mode(new_theme)
+
+        messagebox.showinfo("Paramètres", "Paramètres sauvegardés avec succès!\nCertains éléments nécessitent un redémarrage pour être mis à jour.")
     
     def ok_clicked(self):
         self.apply_settings()
@@ -505,9 +511,20 @@ class VideoDownloaderApp(ctk.CTk):
         
         # Configuration de la fenêtre avec paramètres sauvegardés
         self.title(t("app_title"))
-        saved_geometry = self.settings_manager.get("window_geometry", "900x750")
+        saved_geometry = self.settings_manager.get("window_geometry", "1100x780")
         self.geometry(saved_geometry)
         self.resizable(True, True)
+        self.minsize(900, 650)  # Taille minimale pour que tout soit visible
+
+        # Centrer la fenêtre à l'écran au premier lancement
+        self.update_idletasks()
+        w = self.winfo_width()
+        h = self.winfo_height()
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        x = (sw - w) // 2
+        y = (sh - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
         
         # Icône de la fenêtre et de la barre des tâches
         try:
@@ -588,7 +605,10 @@ class VideoDownloaderApp(ctk.CTk):
         title_label = ctk.CTkLabel(parent_frame, text="TelVid-Vizane", font=("Helvetica", 28, "bold"))
         title_label.pack(pady=(0, 10))
         # Bannière explicative
-        self.banner = ctk.CTkFrame(parent_frame, fg_color="#1e293b")
+        # Bannière explicative — couleur adaptative selon le thème
+        mode = ctk.get_appearance_mode()
+        banner_bg = "#1e293b" if mode == "Dark" else "#e2e8f0"
+        self.banner = ctk.CTkFrame(parent_frame, fg_color=banner_bg)
         self.banner.pack(pady=10, padx=10, fill="x")
         banner_text = (
             "\nPLAN GRATUIT : 1 téléchargement à la fois, Vidéo SD (480p), Audio MP3 128kbps.\n"
@@ -671,35 +691,27 @@ class VideoDownloaderApp(ctk.CTk):
 
         self.update_download_button_state()
 
-        # --- NOUVEAU : Cadre pour la liste des téléchargements ---
-        self.downloads_list_frame = ctk.CTkScrollableFrame(parent_frame, label_text="File d'attente")
-        self.downloads_list_frame.pack(pady=10, fill="both", expand=True)
-
-        # Label initial si la liste est vide
-        self.empty_list_label = ctk.CTkLabel(self.downloads_list_frame, text="Aucun téléchargement en cours.", text_color="gray")
-        self.empty_list_label.pack(pady=20)
-
         # Plateformes supportées
         platforms_label = ctk.CTkLabel(parent_frame, text="Plateformes supportées : YouTube, Facebook, Instagram, Twitter, TikTok et plus encore", font=("Helvetica", 11, "italic"), text_color="#38bdf8")
         platforms_label.pack(pady=5)
-        
-        # Boutons pour paramètres et historique
+
+        # Boutons pour paramètres, historique et à propos
         buttons_frame = ctk.CTkFrame(parent_frame)
-        buttons_frame.pack(pady=10, fill="x")
-        
+        buttons_frame.pack(pady=5, fill="x")
+
         settings_button = ctk.CTkButton(
-            buttons_frame, 
-            text=t("settings"), 
+            buttons_frame,
+            text=t("settings"),
             command=self.open_settings_window,
             width=150,
             fg_color="#374151",
             hover_color="#4b5563"
         )
         settings_button.pack(side="left", padx=10)
-        
+
         history_button = ctk.CTkButton(
-            buttons_frame, 
-            text=t("history"), 
+            buttons_frame,
+            text=t("history"),
             command=self.open_history_window,
             width=150,
             fg_color="#374151",
@@ -716,6 +728,14 @@ class VideoDownloaderApp(ctk.CTk):
             hover_color="#4b5563"
         )
         about_button.pack(side="left", padx=10)
+
+        # File d'attente des téléchargements — en bas, expand pour remplir l'espace restant
+        self.downloads_list_frame = ctk.CTkScrollableFrame(parent_frame, label_text="File d'attente")
+        self.downloads_list_frame.pack(pady=10, fill="both", expand=True)
+
+        # Label initial si la liste est vide
+        self.empty_list_label = ctk.CTkLabel(self.downloads_list_frame, text="Aucun téléchargement en cours.", text_color="gray")
+        self.empty_list_label.pack(pady=20)
 
     def _create_converter_widgets(self, parent_frame):
         """Crée les widgets pour le panneau de conversion local."""
@@ -1228,7 +1248,9 @@ class VideoDownloaderApp(ctk.CTk):
             win.update_idletasks()
 
             # En-tête
-            header = ctk.CTkFrame(win, fg_color="#1e293b")
+            mode = ctk.get_appearance_mode()
+            header_bg = "#1e293b" if mode == "Dark" else "#e2e8f0"
+            header = ctk.CTkFrame(win, fg_color=header_bg)
             header.pack(fill="x", padx=0, pady=0)
 
             ctk.CTkLabel(

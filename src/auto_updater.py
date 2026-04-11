@@ -20,7 +20,10 @@ class AutoUpdater:
         self.current_version = current_version
         self.update_url = "https://api.github.com/repos/Ir-vital/telvid-vizane/releases/latest"
         self.fallback_url = "https://httpbin.org/status/404"
-        self.update_check_file = "last_update_check.json"
+        app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
+        app_dir = os.path.join(app_data, 'TelVid-Vizane')
+        os.makedirs(app_dir, exist_ok=True)
+        self.update_check_file = os.path.join(app_dir, "last_update_check.json")
         self.app_name = "TelVid-Vizane"
         
     def check_for_updates(self, silent=False):

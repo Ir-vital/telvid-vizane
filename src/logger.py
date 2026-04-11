@@ -12,7 +12,8 @@ import json
 class AppLogger:
     def __init__(self, app_name="TelVid-Vizane"):
         self.app_name = app_name
-        self.log_dir = "logs"
+        app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
+        self.log_dir = os.path.join(app_data, 'TelVid-Vizane', 'logs')
         self.ensure_log_directory()
         self.setup_loggers()
     

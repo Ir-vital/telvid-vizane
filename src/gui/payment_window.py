@@ -119,7 +119,14 @@ class PaymentWindow(ctk.CTkToplevel):
         contact_label.pack(pady=10)
 
     def create_plan_frame(self, parent, title, price, features, plan_type, is_recommended=False):
-        frame = ctk.CTkFrame(parent, fg_color="#1e293b" if is_recommended else "#0e1726")
+        # Couleurs adaptatives selon le thème actuel
+        mode = ctk.get_appearance_mode()
+        if is_recommended:
+            bg_color = "#1e293b" if mode == "Dark" else "#dbeafe"
+        else:
+            bg_color = "#0f172a" if mode == "Dark" else "#f1f5f9"
+
+        frame = ctk.CTkFrame(parent, fg_color=bg_color)
 
         # Badge recommandé
         if is_recommended:

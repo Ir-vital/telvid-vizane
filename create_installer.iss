@@ -1,10 +1,10 @@
 ; Script pour Inno Setup - TelVid-Vizane
-; © 2024, Vital Zagabe
+; © 2026, Vital Zagabe Néophite — VIZANE
 
 #define MyAppName "TelVid-Vizane"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "Vital Zagabe"
-#define MyAppURL "https://github.com/ir-vizane/telVidVIZANE"
+#define MyAppPublisher "Vital Zagabe Néophite (VIZANE)"
+#define MyAppURL "https://github.com/Ir-vital/telvid-vizane"
 #define MyAppExeName "TelVid-Vizane.exe"
 
 [Setup]

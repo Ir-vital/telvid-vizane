@@ -4,27 +4,36 @@ import uuid
 import hashlib
 import time
 from datetime import datetime, timedelta
-import requests # Ajout nécessaire pour les requêtes serveur
+import requests
+
+
+def get_app_data_dir():
+    """Retourne le dossier AppData pour stocker les fichiers de l'app."""
+    app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
+    app_dir = os.path.join(app_data, 'TelVid-Vizane')
+    os.makedirs(app_dir, exist_ok=True)
+    return app_dir
+
 
 class LicenseManager:
     def __init__(self):
-        self.config_file = 'premium_config.json'
-        self.license_file = 'license.json'
+        app_dir = get_app_data_dir()
+        self.config_file = os.path.join(app_dir, 'premium_config.json')
+        self.license_file = os.path.join(app_dir, 'license.json')
         self.is_premium = False
         self.license_key = ""
         self.license_type = "free"
         self.expiry_date = None
         self.user_id = self._get_or_create_user_id()
         self.load_license()
-        
+
     def _get_or_create_user_id(self):
         """Génère ou récupère un ID utilisateur unique"""
-        user_id_file = 'user_id.txt'
+        user_id_file = os.path.join(get_app_data_dir(), 'user_id.txt')
         if os.path.exists(user_id_file):
             with open(user_id_file, 'r') as f:
                 return f.read().strip()
         else:
-            # Générer un nouvel ID utilisateur unique
             user_id = str(uuid.uuid4())
             with open(user_id_file, 'w') as f:
                 f.write(user_id)
