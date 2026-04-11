@@ -29,13 +29,19 @@ class VideoDownloader:
         """
         # Créer un dossier temporaire unique pour ce téléchargement
         temp_dir = tempfile.mkdtemp(prefix="telvid_")
-        
+
+        # Template de sortie selon le format
+        if format_option == "audio":
+            outtmpl = os.path.join(output_path, '%(title)s.%(ext)s')
+        else:
+            outtmpl = os.path.join(output_path, '%(title)s.mp4')
+
         opts = {
-            'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
+            'outtmpl': outtmpl,
             'noplaylist': True,
             'ignoreerrors': True,
             'no_warnings': False,
-            'quiet': True, # Moins de logs dans la console, on gère via callbacks
+            'quiet': True,
             'verbose': False,
             'progress_hooks': [progress_callback] if progress_callback else [],
             'extractaudio': False,
@@ -60,13 +66,23 @@ class VideoDownloader:
                 'preferredquality': '320' if is_premium else '128',
             }]
         elif format_option == "video_hd":
-            # La qualité HD est gérée par la logique de l'application,
-            # mais on s'assure de prendre la meilleure qualité possible.
-            opts['format'] = 'bestvideo[height>=720]+bestaudio/best[height>=720]/best'
-            opts.pop('postprocessors', None)
-        else:  # format_option == "video_sd"
-            opts['format'] = 'bestvideo[height<=480]+bestaudio/best[height<=480]/best'
-            opts.pop('postprocessors', None)
+            opts['format'] = 'bestvideo[ext=mp4][height>=720]+bestaudio[ext=m4a]/bestvideo[height>=720]+bestaudio/best[height>=720]/best'
+            opts['merge_output_format'] = 'mp4'
+            opts['postprocessors'] = [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }]
+            opts['postprocessor_args'] = ['-c:v', 'copy', '-c:a', 'aac']
+        else:  # video_sd
+            opts['format'] = 'bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
+            opts['merge_output_format'] = 'mp4'
+            opts['postprocessors'] = [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }]
+            opts['postprocessor_args'] = ['-c:v', 'copy', '-c:a', 'aac']
+
+        return opts, temp_dir
         
         return opts, temp_dir
 
