@@ -25,7 +25,7 @@ class PaymentWindow(ctk.CTkToplevel):
         self.callback = callback
 
         # --- Centraliser le numéro de téléphone ---
-        self.CONTACT_PHONE = "+243 827 788 173"
+        self.CONTACT_PHONE = "+257 62 305 671"
         self.WHATSAPP_NUMBER = "243827788173" # Sans le '+' pour les liens wa.me
 
         self.create_widgets()
@@ -240,7 +240,7 @@ class PaymentWindow(ctk.CTkToplevel):
 
         # Afficher le formulaire de paiement selon la méthode choisie
         if "Lumicash" in payment_method:
-            instructions = f"1. Composez *222#\n2. Sélectionnez 'Transfert d'argent'\n3. Envoyez l'argent au numéro {self.CONTACT_PHONE}\n4. Montant à payer: {price}\n5. Prenez une capture d'écran du message de confirmation"
+            instructions = f"1. Composez *163#\n2. Sélectionnez 'Transfert d'argent'\n3. Envoyez l'argent au numéro {self.CONTACT_PHONE}\n4. Montant à payer: {price}\n5. Prenez une capture d'écran du message de confirmation"
             self._create_payment_form_window(plan_type, price, "Lumicash", instructions)
         elif "Ecocash" in payment_method:
             instructions = f"Pour payer avec Ecocash:\n\n1. Composez *151#\n2. Sélectionnez 'Payer'\n3. Envoyez l'argent au numéro {self.CONTACT_PHONE}\n4. Entrez le montant: {price}\n5. Confirmez avec votre code PIN\n6. Prenez une capture d'écran du message de confirmation"
