@@ -2,7 +2,7 @@
 ; © 2026, Vital Zagabe Néophite — VIZANE
 
 #define MyAppName "TelVid-Vizane"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Vital Zagabe Néophite (VIZANE)"
 #define MyAppURL "https://github.com/Ir-vital/telvid-vizane"
 #define MyAppExeName "TelVid-Vizane.exe"

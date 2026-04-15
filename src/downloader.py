@@ -19,16 +19,24 @@ class VideoDownloader:
     """Gère le téléchargement de vidéos en utilisant yt-dlp."""
 
     def __init__(self):
-        # Pas d'options partagées pour éviter les problèmes de thread safety
         pass
 
-    def _get_ydl_opts(self, output_path, format_option, is_premium, progress_callback):
-        """
-        Construit un dictionnaire d'options yt-dlp pour un téléchargement spécifique.
-        Rend la classe thread-safe en n'utilisant pas d'options partagées.
-        """
-        # Créer un dossier temporaire unique pour ce téléchargement
+    def _get_ydl_opts(self, output_path, format_option, is_premium, progress_callback, pause_event=None):
+        """Construit un dictionnaire d'options yt-dlp pour un téléchargement spécifique."""
         temp_dir = tempfile.mkdtemp(prefix="telvid_")
+
+        # Template de sortie selon le format
+        if format_option == "audio":
+            outtmpl = os.path.join(output_path, '%(title)s.%(ext)s')
+        else:
+            outtmpl = os.path.join(output_path, '%(title)s.mp4')
+
+        # Wrapper du progress_callback pour gérer la pause
+        def progress_with_pause(d):
+            if pause_event:
+                pause_event.wait()  # Bloque si en pause, continue sinon
+            if progress_callback:
+                progress_callback(d)
 
         # Template de sortie selon le format
         if format_option == "audio":
@@ -43,7 +51,7 @@ class VideoDownloader:
             'no_warnings': False,
             'quiet': True,
             'verbose': False,
-            'progress_hooks': [progress_callback] if progress_callback else [],
+            'progress_hooks': [progress_with_pause] if progress_callback else [],
             'extractaudio': False,
             'audioformat': 'mp3',
             'audioquality': '320' if is_premium else '128',
@@ -86,7 +94,9 @@ class VideoDownloader:
         
         return opts, temp_dir
 
-    def download_video(self, url, output_path, format_option, is_premium, progress_callback=None, completion_callback=None, ydl_instance=None):
+    def download_video(self, url, output_path, format_option, is_premium,
+                       progress_callback=None, completion_callback=None,
+                       ydl_instance=None, pause_event=None, cancel_event=None):
         """
         Télécharge une vidéo depuis une URL dans un thread séparé pour ne pas bloquer l'UI.
 
@@ -127,18 +137,19 @@ class VideoDownloader:
             file_path = None
             temp_dir = None
             try:
-                # Obtenir les options spécifiques à ce téléchargement
-                ydl_opts, temp_dir = self._get_ydl_opts(output_path, format_option, is_premium, progress_callback)
-                
+                ydl_opts, temp_dir = self._get_ydl_opts(
+                    output_path, format_option, is_premium,
+                    progress_callback, pause_event
+                )
+
                 log_download_start(url, format_option)
 
-                # D'abord extraire les informations sans télécharger
+                # Extraire les infos sans télécharger
                 with yt_dlp.YoutubeDL({**ydl_opts, 'skip_download': True, 'quiet': True}) as ydl:
                     try:
                         info_dict = ydl.extract_info(url, download=False)
                         if info_dict:
                             video_title = info_dict.get('title', 'Vidéo')
-                            # Nettoyer le titre pour éviter les problèmes de nom de fichier
                             video_title = self._sanitize_filename(video_title)
                             file_path = ydl.prepare_filename(info_dict)
                     except Exception as e:
@@ -147,12 +158,33 @@ class VideoDownloader:
                             completion_callback(False, f"Impossible d'extraire les informations: {str(e)}", None)
                         return
 
-                # Ensuite télécharger la vidéo
+                # Vérifier annulation avant de démarrer
+                if cancel_event and cancel_event.is_set():
+                    if completion_callback:
+                        completion_callback(False, "Téléchargement annulé", None)
+                    return
+
+                # Télécharger
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
+
+                    # Vérifier annulation après téléchargement
+                    if cancel_event and cancel_event.is_set():
+                        if completion_callback:
+                            completion_callback(False, "Téléchargement annulé", None)
+                        return
+
                     if info:
                         actual_title = info.get('title', video_title)
                         duration = info.get('duration')
+
+                        # Corriger le chemin final — on force toujours .mp4 pour les vidéos
+                        if file_path and format_option != "audio":
+                            base = os.path.splitext(file_path)[0]
+                            mp4_path = base + ".mp4"
+                            if os.path.exists(mp4_path):
+                                file_path = mp4_path
+
                         log_download_success(url, actual_title, file_path, duration)
                         if completion_callback:
                             completion_callback(True, actual_title, file_path)

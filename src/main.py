@@ -576,6 +576,10 @@ class VideoDownloaderApp(ctk.CTk):
         # Logger le démarrage de l'application
         log_app_event(f"Application démarrée - Langue: {get_current_language()}, Thème: {theme}")
         log_app_event(f"Mode: {'Premium' if self.license_manager.is_premium else 'Gratuit'}")
+
+        # Animation de démarrage — fondu d'entrée
+        from src.gui.animations import fade_in
+        fade_in(self, duration=400)
         
     def create_widgets(self):
         # Conteneur principal pour les deux panneaux
@@ -587,12 +591,31 @@ class VideoDownloaderApp(ctk.CTk):
         downloader_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
         self._create_downloader_widgets(downloader_frame)
 
-        # --- Panneau de Droite : Convertisseur ---
-        if self.converter:  # Ne créer que si LocalConverter a été importé avec succès
-            converter_frame = ctk.CTkFrame(content_frame, width=280)
-            converter_frame.pack(side="right", fill="y")
-            converter_frame.pack_propagate(False)  # Empêche le cadre de rétrécir
-            self._create_converter_widgets(converter_frame)
+        # --- Panneau de Droite : onglets Convertisseur + Vidéos téléchargées ---
+        right_panel = ctk.CTkFrame(content_frame, width=340)
+        right_panel.pack(side="right", fill="y")
+        right_panel.pack_propagate(False)
+
+        # Onglets
+        right_tabs = ctk.CTkTabview(right_panel)
+        right_tabs.pack(fill="both", expand=True, padx=4, pady=4)
+
+        # Onglet Convertisseur
+        conv_tab = right_tabs.add("🔄 Convertir")
+        if self.converter:
+            self._create_converter_widgets(conv_tab)
+        else:
+            ctk.CTkLabel(conv_tab, text="Convertisseur non disponible.\nInstallez moviepy.",
+                         text_color="#64748b", font=("Segoe UI", 11, "italic")).pack(pady=30)
+
+        # Onglet Vidéos téléchargées
+        from src.gui.downloads_panel import DownloadsPanel
+        videos_tab = right_tabs.add("🎬 Vidéos")
+        self.downloads_panel = DownloadsPanel(videos_tab, fg_color="transparent")
+        self.downloads_panel.pack(fill="both", expand=True)
+
+        # Recharger les vidéos de l'historique au démarrage
+        self.after(1000, self._restore_downloads_panel)
 
     def _create_downloader_widgets(self, parent_frame):
         """Crée tous les widgets pour la partie téléchargement."""
@@ -676,10 +699,12 @@ class VideoDownloaderApp(ctk.CTk):
         path_label.pack(side="left", padx=10)
         path_button = ctk.CTkButton(path_frame, text="Changer", command=self.choose_output_path)
         path_button.pack(side="right", padx=10)
-        # Bouton de téléchargement avec icône
-        download_icon = self.icon_manager.get('download')
-        self.main_download_button = ctk.CTkButton(parent_frame, text="Télécharger", command=self.start_download,
-            height=45, font=("Helvetica", 16, "bold"), fg_color="#2563eb", hover_color="#1d4ed8"
+        # Bouton de téléchargement
+        self.main_download_button = ctk.CTkButton(
+            parent_frame, text="⬇  Télécharger",
+            command=self.start_download,
+            height=45, font=("Helvetica", 16, "bold"),
+            fg_color="#2563eb", hover_color="#1d4ed8"
         )
         self.main_download_button.pack(pady=(20, 5))
 
@@ -701,31 +726,25 @@ class VideoDownloaderApp(ctk.CTk):
 
         settings_button = ctk.CTkButton(
             buttons_frame,
-            text=t("settings"),
+            text="⚙ " + t("settings"),
             command=self.open_settings_window,
-            width=150,
-            fg_color="#374151",
-            hover_color="#4b5563"
+            width=150, fg_color="#374151", hover_color="#4b5563"
         )
         settings_button.pack(side="left", padx=10)
 
         history_button = ctk.CTkButton(
             buttons_frame,
-            text=t("history"),
+            text="🕐 " + t("history"),
             command=self.open_history_window,
-            width=150,
-            fg_color="#374151",
-            hover_color="#4b5563"
+            width=150, fg_color="#374151", hover_color="#4b5563"
         )
         history_button.pack(side="left", padx=10)
 
         about_button = ctk.CTkButton(
             buttons_frame,
-            text="À propos / Licence",
+            text="ℹ  À propos / Licence",
             command=self.open_about_window,
-            width=160,
-            fg_color="#374151",
-            hover_color="#4b5563"
+            width=170, fg_color="#374151", hover_color="#4b5563"
         )
         about_button.pack(side="left", padx=10)
 
@@ -771,50 +790,139 @@ class VideoDownloaderApp(ctk.CTk):
         job_frame = ctk.CTkFrame(self.downloads_list_frame)
         job_frame.pack(fill="x", padx=5, pady=5)
 
-        # Header avec URL et bouton d'annulation
+        # Header avec URL
         header_frame = ctk.CTkFrame(job_frame)
         header_frame.pack(fill="x", padx=5, pady=5)
 
-        title_label = ctk.CTkLabel(header_frame, text=f"En attente d'infos pour: {url[:50]}...", anchor="w")
+        title_label = ctk.CTkLabel(
+            header_frame,
+            text=f"En attente: {url[:45]}...",
+            anchor="w"
+        )
         title_label.pack(side="left", fill="x", expand=True, padx=5)
 
-        cancel_button = ctk.CTkButton(
-            header_frame, 
-            text="❌", 
-            width=30, 
-            height=25,
-            command=lambda: self._cancel_download(job_id)
-        )
-        cancel_button.pack(side="right", padx=5)
-
+        # Barre de progression
         progress_bar = ctk.CTkProgressBar(job_frame)
         progress_bar.pack(fill="x", padx=10, pady=5)
         progress_bar.set(0)
 
-        status_label = ctk.CTkLabel(job_frame, text="En attente...", anchor="w", font=("Segoe UI", 11), text_color="gray")
-        status_label.pack(fill="x", padx=10, pady=(0,5))
+        # Statut
+        status_label = ctk.CTkLabel(
+            job_frame, text="En attente...",
+            anchor="w", font=("Segoe UI", 11), text_color="gray"
+        )
+        status_label.pack(fill="x", padx=10, pady=(0, 4))
+
+        # Boutons de contrôle
+        ctrl_frame = ctk.CTkFrame(job_frame, fg_color="transparent")
+        ctrl_frame.pack(fill="x", padx=10, pady=(0, 6))
+
+        btn_pause = ctk.CTkButton(
+            ctrl_frame, text="⏸ Pause",
+            width=80, height=26, fg_color="#374151", hover_color="#4b5563",
+            font=("Segoe UI", 11), corner_radius=6,
+            command=lambda: self._pause_download(job_id)
+        )
+        btn_pause.pack(side="left", padx=(0, 4))
+
+        btn_resume = ctk.CTkButton(
+            ctrl_frame, text="▶ Continuer",
+            width=90, height=26, fg_color="#374151", hover_color="#4b5563",
+            font=("Segoe UI", 11), corner_radius=6,
+            state="disabled",
+            command=lambda: self._resume_download(job_id)
+        )
+        btn_resume.pack(side="left", padx=(0, 4))
+
+        btn_cancel = ctk.CTkButton(
+            ctrl_frame, text="✕ Annuler",
+            width=80, height=26, fg_color="#7f1d1d", hover_color="#991b1b",
+            font=("Segoe UI", 11), corner_radius=6,
+            command=lambda: self._cancel_download(job_id)
+        )
+        btn_cancel.pack(side="left")
+
+        # Events pour pause et annulation
+        import threading
+        pause_event  = threading.Event()
+        cancel_event = threading.Event()
+        pause_event.set()  # Démarrer en mode "non pausé"
 
         self.download_jobs[job_id] = {
-            "frame": job_frame,
+            "frame":        job_frame,
             "header_frame": header_frame,
-            "title_label": title_label,
+            "title_label":  title_label,
             "progress_bar": progress_bar,
             "status_label": status_label,
-            "cancel_button": cancel_button,
-            "url": url,
-            "cancelled": False
+            "btn_pause":    btn_pause,
+            "btn_resume":   btn_resume,
+            "btn_cancel":   btn_cancel,
+            "url":          url,
+            "cancelled":    False,
+            "completed":    False,
+            "paused":       False,
+            "pause_event":  pause_event,
+            "cancel_event": cancel_event,
         }
 
+        # Barre indéterminée pendant l'extraction des infos
+        from src.gui.animations import IndeterminateProgress
+        indet = IndeterminateProgress(progress_bar, speed=25)
+        indet.start()
+        self.download_jobs[job_id]["indet_progress"] = indet
+
+    def _pause_download(self, job_id):
+        """Met en pause un téléchargement en cours."""
+        if job_id not in self.download_jobs:
+            return
+        widgets = self.download_jobs[job_id]
+        if widgets.get("paused") or widgets.get("completed"):
+            return
+        widgets["pause_event"].clear()  # Bloque le thread
+        widgets["paused"] = True
+        widgets["status_label"].configure(text="⏸ En pause", text_color="orange")
+        widgets["btn_pause"].configure(state="disabled")
+        widgets["btn_resume"].configure(state="normal")
+        log_app_event(f"Téléchargement mis en pause - Job ID: {job_id}")
+
+    def _resume_download(self, job_id):
+        """Reprend un téléchargement en pause."""
+        if job_id not in self.download_jobs:
+            return
+        widgets = self.download_jobs[job_id]
+        if not widgets.get("paused"):
+            return
+        widgets["pause_event"].set()  # Débloque le thread
+        widgets["paused"] = False
+        widgets["status_label"].configure(text="▶ Reprise...", text_color="gray")
+        widgets["btn_pause"].configure(state="normal")
+        widgets["btn_resume"].configure(state="disabled")
+        log_app_event(f"Téléchargement repris - Job ID: {job_id}")
+
     def _cancel_download(self, job_id):
-        """Annule un téléchargement en cours"""
-        try:
-            if job_id in self.download_jobs:
-                self.download_jobs[job_id]["cancelled"] = True
-                self.download_jobs[job_id]["status_label"].configure(text="Annulation...", text_color="orange")
-                self.download_jobs[job_id]["cancel_button"].configure(state="disabled")
-                log_app_event(f"Téléchargement annulé - Job ID: {job_id}")
-        except Exception as e:
-            log_error(f"Erreur annulation téléchargement: {e}")
+        """Annule un téléchargement avec confirmation."""
+        if job_id not in self.download_jobs:
+            return
+        widgets = self.download_jobs[job_id]
+        if widgets.get("completed"):
+            return
+
+        from tkinter import messagebox as _mb
+        if not _mb.askyesno(
+            "Annuler le téléchargement",
+            "Voulez-vous vraiment annuler ce téléchargement ?"
+        ):
+            return
+
+        # Débloquer la pause si en pause, puis signaler l'annulation
+        widgets["pause_event"].set()
+        widgets["cancel_event"].set()
+        widgets["cancelled"] = True
+        widgets["status_label"].configure(text="❌ Annulé", text_color="#ef4444")
+        widgets["btn_pause"].configure(state="disabled")
+        widgets["btn_resume"].configure(state="disabled")
+        widgets["btn_cancel"].configure(state="disabled")
+        log_app_event(f"Téléchargement annulé - Job ID: {job_id}")
 
     def upgrade_to_premium(self):
         """Ouvre la fenêtre de mise à niveau vers Premium"""
@@ -834,6 +942,11 @@ class VideoDownloaderApp(ctk.CTk):
         
         try:
             if progress_info['status'] == 'downloading':
+                # Arrêter la barre indéterminée dès que le vrai progress commence
+                if "indet_progress" in widgets:
+                    widgets["indet_progress"].stop()
+                    del widgets["indet_progress"]
+
                 # Mettre à jour le titre si on l'obtient
                 if 'info_dict' in progress_info and widgets["title_label"].cget("text").startswith("En attente"):
                     title = progress_info['info_dict'].get('title', 'Titre inconnu')
@@ -882,8 +995,11 @@ class VideoDownloaderApp(ctk.CTk):
                     text="Collez une URL et cliquez sur le bouton pour démarrer."
                 )
         else:
-            # Pour les utilisateurs gratuits, on ne permet qu'un seul téléchargement à la fois.
-            active_jobs = len(self.download_jobs) > 0
+            # Compter seulement les jobs actifs (pas encore terminés)
+            active_jobs = any(
+                not job.get("completed", False)
+                for job in self.download_jobs.values()
+            )
             if active_jobs:
                 self.main_download_button.configure(text="Téléchargement en cours...", state="disabled")
                 self.download_hint_label.configure(
@@ -945,6 +1061,10 @@ class VideoDownloaderApp(ctk.CTk):
             job_id = self.job_id_counter
             format_option = self.format_var.get()
             is_premium = self.license_manager.is_premium
+
+            # Animation pulse sur le bouton
+            from src.gui.animations import pulse_button
+            pulse_button(self.main_download_button, "#2563eb", "#1d4ed8", interval=150, repeat=2)
 
             # Créer le widget UI pour cette tâche
             self._create_job_widget(job_id, url)
@@ -1014,18 +1134,49 @@ class VideoDownloaderApp(ctk.CTk):
 
     def _download_worker(self, job_id, url, output_path, format_option, is_premium):
         """Cette fonction est exécutée par le ThreadPoolExecutor."""
-        
-        # Wrapper pour les callbacks pour inclure le job_id
+
         def progress_callback_wrapper(d):
             self.after(0, self.update_job_progress, job_id, d)
-            
+
         def completion_callback_wrapper(success, message, file_path=None):
             self.after(0, self.job_complete, job_id, success, message, file_path)
 
-        # Réutiliser self.downloader — la classe est thread-safe (options créées par appel)
+        # Récupérer les events du job
+        widgets = self.download_jobs.get(job_id, {})
+        pause_event  = widgets.get("pause_event")
+        cancel_event = widgets.get("cancel_event")
+
         self.downloader.download_video(
-            url, output_path, format_option, is_premium, progress_callback_wrapper, completion_callback_wrapper
+            url, output_path, format_option, is_premium,
+            progress_callback_wrapper, completion_callback_wrapper,
+            pause_event=pause_event, cancel_event=cancel_event
         )
+
+    def _restore_downloads_panel(self):
+        """Recharge les vidéos téléchargées depuis l'historique au démarrage."""
+        try:
+            history = self.history_manager.get_recent(50)
+            for entry in reversed(history):
+                if entry.get("success") and entry.get("file_path"):
+                    path = entry["file_path"]
+                    # Vérifier que le fichier existe encore sur le disque
+                    if os.path.exists(path):
+                        # Accepter seulement les fichiers vidéo/audio
+                        ext = os.path.splitext(path)[1].lower()
+                        if ext in ('.mp4', '.mkv', '.avi', '.mov', '.webm', '.mp3', '.m4a'):
+                            self.downloads_panel.add_video(path, self._open_video_player)
+        except Exception as e:
+            log_error(f"Erreur restauration panneau vidéos: {e}")
+
+    def _open_video_player(self, video_path: str):
+        """Ouvre le lecteur vidéo intégré TelVid Player."""
+        try:
+            from src.gui.video_player import VideoPlayer
+            player = VideoPlayer(self, video_path)
+            player.focus()
+        except Exception as e:
+            log_error(f"Erreur ouverture lecteur: {e}")
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir le lecteur:\n{e}")
 
     def open_settings_window(self):
         """Ouvre la fenêtre des paramètres"""
@@ -1072,68 +1223,90 @@ class VideoDownloaderApp(ctk.CTk):
         widgets = self.download_jobs[job_id]
 
         try:
-            # Ajouter à l'historique si activé
+            # Historique
             if self.settings_manager.get("history_enabled", True):
-                # Récupérer l'URL depuis le widget (plus fiable)
-                url_text = widgets["title_label"].cget("text")
-                if "En attente d'infos pour:" in url_text:
-                    url = url_text.replace("En attente d'infos pour: ", "").replace("...", "")
-                else:
-                    url = "URL inconnue"
-                
+                url = widgets.get("url", "URL inconnue")
                 title = message if success else "Échec du téléchargement"
                 error_msg = message if not success else None
                 self.history_manager.add_download(url, title, success, file_path, error_msg)
 
-            # Mettre à jour l'UI de la tâche
+            # Désactiver tous les boutons de contrôle
+            for btn in ("btn_pause", "btn_resume", "btn_cancel"):
+                try:
+                    widgets[btn].configure(state="disabled")
+                except Exception:
+                    pass
+
+            # Arrêter la barre indéterminée si encore active
+            if "indet_progress" in widgets:
+                widgets["indet_progress"].stop()
+                del widgets["indet_progress"]
+
             if success:
-                widgets["status_label"].configure(text=f"✅ Terminé: {os.path.basename(file_path) if file_path else 'Fichier téléchargé'}", text_color="green")
+                fname = os.path.basename(file_path) if file_path else "Fichier téléchargé"
+                widgets["status_label"].configure(text=f"✅ Terminé: {fname}", text_color="green")
                 widgets["progress_bar"].set(1.0)
-                
-                # Proposer d'ouvrir le dossier
+
+                # Toast de notification
+                from src.gui.animations import show_toast
+                show_toast(self, f"✅ Téléchargement terminé : {fname[:40]}", color="#166534", duration=3000)
+
+                # Ajouter au panneau vidéos
+                if file_path and os.path.exists(file_path):
+                    self.after(500, lambda p=file_path: self.downloads_panel.add_video(
+                        p, self._open_video_player
+                    ))
+
+                # Bouton ouvrir dossier
                 def open_folder():
                     try:
-                        if file_path and os.path.exists(os.path.dirname(file_path)):
-                            os.startfile(os.path.dirname(file_path))
+                        folder = os.path.dirname(file_path) if file_path else self.output_path
+                        if os.path.exists(folder):
+                            os.startfile(folder)
                     except Exception as e:
                         log_error(f"Erreur ouverture dossier: {e}")
-                
+
                 open_button = ctk.CTkButton(
-                    widgets["frame"], 
-                    text="📁 Ouvrir dossier", 
+                    widgets["frame"],
+                    text="📁 Ouvrir dossier",
                     command=open_folder,
-                    width=100,
-                    height=25
+                    width=120, height=26, corner_radius=6
                 )
                 open_button.pack(side="right", padx=5, pady=2)
-                
+
             else:
                 widgets["status_label"].configure(text=f"❌ Échec: {message}", text_color="red")
                 widgets["progress_bar"].set(0)
 
-            # Programmer la suppression du widget après 30 secondes
+            # Supprimer le widget après 8 secondes
             def remove_job():
                 try:
                     if job_id in self.download_jobs:
                         widgets["frame"].destroy()
                         self.download_jobs.pop(job_id, None)
-                        
-                        # Afficher le label vide si plus de téléchargements
-                        if len(self.download_jobs) == 0 and not hasattr(self, 'empty_list_label'):
+                        if len(self.download_jobs) == 0:
                             self.empty_list_label = ctk.CTkLabel(
-                                self.downloads_list_frame, 
-                                text="Aucun téléchargement en cours.", 
+                                self.downloads_list_frame,
+                                text="Aucun téléchargement en cours.",
                                 text_color="gray"
                             )
                             self.empty_list_label.pack(pady=20)
-                        
                         self.update_download_button_state()
                 except Exception as e:
                     log_error(f"Erreur suppression job: {e}")
-            
-            self.after(30000, remove_job)  # 30 secondes
-            self.update_download_button_state()
-            
+
+            self.after(8000, remove_job)
+
+            # Débloquer le bouton immédiatement
+            widgets["completed"] = True
+            if not self.license_manager.is_premium:
+                self.main_download_button.configure(
+                    text="Télécharger", state="normal", fg_color="#2563eb"
+                )
+                self.download_hint_label.configure(text="")
+            else:
+                self.update_download_button_state()
+
             log_app_event(f"Téléchargement terminé - Job ID: {job_id}, Succès: {success}")
 
         except Exception as e:
@@ -1167,25 +1340,37 @@ class VideoDownloaderApp(ctk.CTk):
             for widget in self.banner.winfo_children():
                 if isinstance(widget, ctk.CTkButton):
                     widget.destroy()
-            
-            # Ajouter le bouton de mise à niveau si l'utilisateur n'est pas premium
+
             if not self.license_manager.is_premium:
+                # Afficher la bannière avec le bouton "Passer Premium"
+                self.banner.pack(pady=10, padx=10, fill="x")
+                # Cacher le badge premium s'il existe
+                if hasattr(self, '_premium_badge'):
+                    try:
+                        self._premium_badge.pack_forget()
+                    except Exception:
+                        pass
                 upgrade_btn = ctk.CTkButton(
                     self.banner, text="Passer Premium", command=self.upgrade_to_premium,
                     fg_color="#FFD700", text_color="black", hover_color="#FFC000"
                 )
                 upgrade_btn.pack(side="right", padx=10)
             else:
-                # Afficher le statut premium et la date d'expiration
+                # Cacher complètement la bannière en Premium
+                self.banner.pack_forget()
+
+                # Afficher un petit badge discret si licence non lifetime
                 if self.license_manager.license_type != "lifetime" and self.license_manager.expiry_date:
                     expiry_date = self.license_manager.expiry_date.strftime("%d/%m/%Y")
-                    premium_label = ctk.CTkLabel(
-                        self.banner, 
-                        text=f"Premium actif jusqu'au {expiry_date}", 
-                        font=("Helvetica", 12, "bold"), 
-                        text_color="#4ade80"
-                    )
-                    premium_label.pack(side="right", padx=10)
+                    if not hasattr(self, '_premium_badge') or not self._premium_badge.winfo_exists():
+                        self._premium_badge = ctk.CTkLabel(
+                            self.banner.master,
+                            text=f"✦ Premium actif jusqu'au {expiry_date}",
+                            font=("Helvetica", 11, "bold"),
+                            text_color="#4ade80",
+                            fg_color="transparent"
+                        )
+                        self._premium_badge.pack(pady=(0, 4))
         except Exception as e:
             log_error(f"Erreur mise à jour bannière: {e}")
     
@@ -1258,7 +1443,7 @@ class VideoDownloaderApp(ctk.CTk):
                 font=("Helvetica", 22, "bold"), text_color="#60a5fa"
             ).pack(pady=(15, 2))
             ctk.CTkLabel(
-                header, text="Version 1.0.0  —  © 2026 Vital Zagabe Néophite (VIZANE)",
+                header, text="Version 1.1.0  —  © 2026 Vital Zagabe Néophite (VIZANE)",
                 font=("Helvetica", 11), text_color="#94a3b8"
             ).pack(pady=(0, 15))
 
@@ -1288,7 +1473,7 @@ class VideoDownloaderApp(ctk.CTk):
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                     "Développeur   : Vital Zagabe Néophite\n"
                     "Marque        : VIZANE\n"
-                    "Version       : 1.0.0\n"
+                    "Version       : 1.1.0\n"
                     "Plateforme    : Windows\n\n"
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     "Contact & Support\n"
@@ -1317,7 +1502,7 @@ class VideoDownloaderApp(ctk.CTk):
 
             ctk.CTkButton(
                 tab_frame, text="📄  Licence (CLUF)", command=show_license,
-                width=160, fg_color="#374151", hover_color="#4b5563"
+                width=170, fg_color="#374151", hover_color="#4b5563"
             ).pack(side="left")
 
             # Bouton fermer
@@ -1331,6 +1516,10 @@ class VideoDownloaderApp(ctk.CTk):
 
             win.deiconify()
             win.grab_set()
+
+            # Animation fondu
+            from src.gui.animations import fade_in
+            fade_in(win, duration=250)
 
         except Exception as e:
             log_error(f"Erreur ouverture fenêtre À propos: {e}")

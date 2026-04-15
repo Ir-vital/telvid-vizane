@@ -4,7 +4,7 @@ TelVid-Vizane - Application de téléchargement de vidéos
 Ce package contient tous les modules principaux de l'application TelVid-Vizane.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "TelVid Team"
 __email__ = "support@telvid-vizane.com"
 

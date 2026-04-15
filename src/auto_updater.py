@@ -16,7 +16,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 class AutoUpdater:
-    def __init__(self, current_version="1.0.0"):
+    def __init__(self, current_version="1.1.0"):
         self.current_version = current_version
         self.update_url = "https://api.github.com/repos/Ir-vital/telvid-vizane/releases/latest"
         self.fallback_url = "https://httpbin.org/status/404"

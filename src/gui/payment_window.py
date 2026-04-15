@@ -41,6 +41,13 @@ class PaymentWindow(ctk.CTkToplevel):
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
+        # Animation fondu
+        try:
+            from src.gui.animations import fade_in
+            fade_in(self, duration=250)
+        except Exception:
+            pass
+
     def create_widgets(self):
         # Titre
         title_label = ctk.CTkLabel(self, text="Choisissez votre plan Premium", font=("Helvetica", 24, "bold"))
@@ -99,7 +106,10 @@ class PaymentWindow(ctk.CTkToplevel):
         self.license_entry = ctk.CTkEntry(license_entry_frame, width=400, placeholder_text="Entrez votre clé de licence")
         self.license_entry.pack(side="left", padx=(0, 10), fill="x", expand=True)
 
-        activate_button = ctk.CTkButton(license_entry_frame, text="Activer", command=self.activate_license)
+        activate_button = ctk.CTkButton(
+            license_entry_frame, text="🔑 Activer",
+            command=self.activate_license
+        )
         activate_button.pack(side="right")
 
         # Informations de paiement sécurisé
@@ -154,13 +164,11 @@ class PaymentWindow(ctk.CTkToplevel):
             feature_label.pack(side="left", fill="x")
 
         # Bouton d'achat
-        button_text = "Acheter maintenant"
         button_color = "#2563eb" if is_recommended else "#1d4ed8"
-        hover_color = "#1d4ed8" if is_recommended else "#1e40af"
-
+        hover_color  = "#1d4ed8" if is_recommended else "#1e40af"
         purchase_button = ctk.CTkButton(
             frame,
-            text=button_text,
+            text="🛒 Acheter maintenant",
             command=lambda: self.process_payment(plan_type),
             fg_color=button_color,
             hover_color=hover_color,
